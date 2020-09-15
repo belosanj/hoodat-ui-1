@@ -1,7 +1,9 @@
 import React from 'react';
 import { StyleSheet, View, TextInput, Image, TouchableOpacity, Text, Alert } from 'react-native';
-
+import validation from 'validation';
+import validate from 'validation_wrapper';
 import { API_ROOT } from '../lib/constants';
+
 
 interface Props {
   navigation: any
@@ -10,7 +12,10 @@ interface Props {
 interface State {
   name: string,
   email: string,
+  emailError: "",
   password: string
+  passwordError: ""
+  confirmPassword: string,
 }
 
 class SignUpScreen extends React.Component<Props, State> {
@@ -18,14 +23,28 @@ class SignUpScreen extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props);
 
-    this.state = { name: '', email: '', password: '' }
+    this.state = { name: '', email: '', password: '', emailError: '', passwordError: '', confirmPassword:''}
   }
 
   async handleSignUp(): Promise<void> {
     const name = this.state.name;
     const email = this.state.email;
     const password = this.state.password;
+    const emailError = validate('email', this.state.email);
+    const passwordError = validate('password', this.state.password);
+    const confirmPassword = this.state.password;
+    
+    this.setState({
+      emailError: emailError, passwordError: passwordError
+    })
 
+    if (!emailError && !passwordError) {
+      alert('Valid!')
+    }
+
+    if(password != confirmPassword){
+      alert('Password does not match');
+    } 
     // TODO: input validation
 
     const response = await fetch(`${API_ROOT}/auth/sign-up`, {
@@ -56,6 +75,26 @@ class SignUpScreen extends React.Component<Props, State> {
     return Promise.resolve();
   }
 
+  emailValidator(){
+    if(this.state.email="")
+    {
+      this.setState({emailEror:"Email field can not be empty"})
+    }
+    else{
+      this.setState({emailEror:""})
+    }
+  }
+
+  passwordValidator(){
+    if(this.state.password="")
+    {
+      this.setState({passwordEror:"Password field can not be empty"})
+    }
+    else{
+      this.setState({passwordEror:""})
+    }
+  }
+
   render(){
     return (
       <View style={styles.container}>
@@ -69,23 +108,41 @@ class SignUpScreen extends React.Component<Props, State> {
         <TextInput
           style={styles.inputUsernamePassword}
           placeholder='full name'
+          keyboardType={'default'}
           onChangeText={(name) => this.setState({ name })}
         />
         <TextInput
           style={styles.inputUsernamePassword}
           placeholder='email'
+          keyboardType={'email-address'}
           onChangeText={(email) => this.setState({ email })}
+          onBlur={()=>{
+            this.setState({
+              emailError: validate('email', this.state.email)
+            })
+          }
+          }
+          error={this.state.emailError}
         />
+        
         <TextInput
           secureTextEntry={true}
           style={styles.inputUsernamePassword}
           placeholder='password'
+          minLength={8}
           onChangeText={(password) => this.setState({ password })}
+          onBlur={() => {
+            this.setState({
+              passwordError: validate('password', this.state.password)
+            })
+          }}
+          error={this.state.passwordError}
         />
         <TextInput
           secureTextEntry={true}
           style={styles.inputUsernamePassword}
           placeholder='confirm password'
+          onChangeText={(confirmPassword) => this.setState({confirmPassword})}
         />
 
         <TouchableOpacity onPress={() => this.handleSignUp()}>
